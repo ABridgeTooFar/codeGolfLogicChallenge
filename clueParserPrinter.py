@@ -108,10 +108,9 @@ def parseContext(scope):
 
     return result
 
-
-def parseClues():
+def parseClues(context,preamble):
     clues = []
-    for line in unparsedRows.splitlines():
+    for line in (preamble+unparsedRows).splitlines():
         if len(line.strip()) == 0:
             continue
         clues.append([]);
@@ -158,8 +157,16 @@ def initializeRow(fills,counts,ids):
     # print(row)
     return row
 
-def processClues(columns,clues):
+def prependPreamble(columns):
     template = initializeRow(*columns)
+    preamble = []
+    for id,fill in template:
+        members = len(template[(id,fill)])
+        preamble.append( ";".join([str(val+1)+"^"+id for val in range(members)]))
+    preamble = "\n".join(preamble)
+    return (template,preamble)
+
+def processClues(template,clues):
     legend = list(template.keys())
     rows = {}
     rownumber = 0
@@ -183,7 +190,51 @@ def processClues(columns,clues):
                 attributes.append("^".join(attribute))
             nickname = (".".join(attributes),"%i.%i"%(rownumber,rowmember))
             rows[nickname]= candidates
-    return (template,rows)
+    return rows
+
+def compareNotes(template,rows):
+    legend = list(template.keys())
+    colMembers = [len(template[l]) for l in legend]
+    lastpar = '0'
+    rowGroups = {}
+    for row in rows: 
+        par,sec = row[1].split('.')
+        if not par in rowGroups:
+            rowGroups[par] = []
+        rowGroups[par].append(row)
+
+    rowKeys = list(rows.keys())
+    maxRow = len(rowKeys)-5
+    rowNum=0
+    while rowNum < maxRow:
+        altNum =  rowNum+1
+        while altNum<maxRow:
+            couples = list(zip(rows[rowKeys[rowNum]],rows[rowKeys[altNum]]))
+            mate = False
+            for col,couple in enumerate(couples):
+                if couple[0]==couple[1] and len(couple[0])==1:
+                    mate=True
+                    break
+            if mate:
+                mated = False
+                #print(rowNum+1,altNum+1,list(couples))
+                for col,couple in enumerate(couples):
+                    first = set(rows[rowKeys[rowNum]][col])
+                    second = set(rows[rowKeys[altNum]][col]) 
+                    if(first != second):
+                        pair = first&second
+                        #print(couples[col],pair)
+                        rows[rowKeys[rowNum]][col]=pair
+                        rows[rowKeys[altNum]][col]=pair
+                        mated=True
+                if mated:
+                    #print("back to start")
+                    rowNum=0
+                    altNum=1
+                    continue
+            altNum += 1
+        rowNum += 1
+    return rows
 
 def showOutput(template,rows):
     legend = list(template.keys())
@@ -192,7 +243,9 @@ def showOutput(template,rows):
     lastpar = '0'
     lastsec = 0
     separator = 0
+    rowNum = 0
     for row in rows:
+        rowNum += 1
         par,sec = row[1].split('.')
         separator = 0
         result = ""
@@ -212,7 +265,7 @@ def showOutput(template,rows):
         result += "|"
         if int(lastpar) < int(par):
             print("|"+"="*(separator-1)+"|")
-        print(result)
+        print(result,rowNum)
         lastpar = par
         lastsec = sec
         #print(rows[row])
@@ -224,8 +277,11 @@ def main():
     print(unparsedCols)
     context = parseContext(unparsedCols)
     columns = processContext(context)
-    clues = parseClues()
-    template,rows = processClues(columns,clues)
+    template,preamble = prependPreamble(columns)
+    clues = parseClues(columns,preamble)
+    rows = processClues(template,clues)
+    showOutput(template,rows)
+    rows = compareNotes(template,rows)
     showOutput(template,rows)
 
 if __name__ == "__main__":
