@@ -122,6 +122,7 @@ def parseClues(context,preamble):
                 group = id_group[1]
                 clue.append(tuple([id,group]))
             clues[-1].append(clue)
+    #print(clues)
     return clues
 
 def processContext(context):
@@ -154,16 +155,36 @@ def processContext(context):
 
 def initializeRow(fills,counts,ids):
     row = { (id,fill): set(range(1,count+1)) for fill,count,id in zip(fills,counts,ids) }
-    # print(row)
     return row
 
-def prependPreamble(columns):
+def prependPreamble(context,columns):
     template = initializeRow(*columns)
     preamble = []
+    skipid = set()
+    bodies = [context]
+    for subcontext in bodies:
+        for (count,id,body,_) in subcontext:
+            if len(body)>0:
+                skipid.update({id})
+                bodies.append(body)
+                member = 0
+                membership = []
+                for siblings,childId,_,bond in body:
+                    for val in range(int(siblings)):
+                        if member >= int(count):
+                            break
+                        membership.append( "%i^%s.%i^%s"%(member+1,id,val+1,childId))
+                        member += 1
+                    if bond != ";":
+                        break;
+                preamble.append( ";".join(membership))
     for id,fill in template:
+        if id in skipid:
+            continue
         members = len(template[(id,fill)])
         preamble.append( ";".join([str(val+1)+"^"+id for val in range(members)]))
     preamble = "\n".join(preamble)
+    #print(preamble)
     return (template,preamble)
 
 def processClues(template,clues):
@@ -192,16 +213,59 @@ def processClues(template,clues):
             rows[nickname]= candidates
     return rows
 
-def compareNotes(template,rows):
-    legend = list(template.keys())
-    colMembers = [len(template[l]) for l in legend]
-    lastpar = '0'
+def reduce(rows):
+    updated = False
+    legend = list(rows.keys())
+    members = len(legend)
+#    colMembers = [len(template[l]) for l in legend]
+#    lastpar = '0'
     rowGroups = {}
     for row in rows: 
         par,sec = row[1].split('.')
-        if not par in rowGroups:
-            rowGroups[par] = []
-        rowGroups[par].append(row)
+        if not int(par) in rowGroups:
+            rowGroups[int(par)] = []
+        rowGroups[int(par)].append(int(sec))
+
+    reset = True
+    rowNum = 0
+    par=min(rowGroups.keys())
+    while par<len(rowGroups):
+        if reset:
+            par=min(rowGroups.keys())
+            rowNum = 0
+            reset = False
+            continue
+
+        if rowNum>=members:
+            break
+        parNum = rowNum
+        cols = len(rows[legend[parNum]])
+        rowsInGroup = len(rowGroups[par])
+        for colNum in range(cols):
+            solutions = set()
+            for section in range(rowsInGroup):
+                secNum = parNum + section
+                if len(rows[legend[secNum]][colNum])==1:
+                    solutions.update(rows[legend[secNum]][colNum])
+            for section in range(rowsInGroup):
+                secNum = parNum + section
+                if len(rows[legend[secNum]][colNum])>1:
+                    if rows[legend[secNum]][colNum]&solutions:
+                        updated = True
+#                    rows[legend[secNum]][colNum]-=solutions #TODO.. remove known solutions
+                    if len(rows[legend[secNum]][colNum])<=1:
+                        reset = True
+        if not reset:
+            rowNum += rowsInGroup
+            par += 1
+    if not updated:
+        return None
+    
+    return rows
+
+
+def compareNotes(rows):
+    updated = False
 
     rowKeys = list(rows.keys())
     maxRow = len(rowKeys)-5
@@ -228,18 +292,23 @@ def compareNotes(template,rows):
                         rows[rowKeys[altNum]][col]=pair
                         mated=True
                 if mated:
+                    updated = True
                     #print("back to start")
                     rowNum=0
                     altNum=1
                     continue
             altNum += 1
         rowNum += 1
+
+    if not updated:
+        return None
+    
     return rows
 
 def showOutput(template,rows):
     legend = list(template.keys())
     colMembers = [len(template[l]) for l in legend]
-    #print(legend)
+    #print(template)
     lastpar = '0'
     lastsec = 0
     separator = 0
@@ -256,6 +325,7 @@ def showOutput(template,rows):
             if len(candidates)<=1:
                 xs = ["X" if (len(candidates)>0) else " "]*(members+fill)
                 for pos in candidates:
+                    #print(candidates)
                     xs[fill+pos-1]="_"
                 result += "|"+"".join(xs)
             elif len(rows[row][col])==members:
@@ -274,14 +344,24 @@ def showOutput(template,rows):
 
 def main():
     print("Welcome from Python")
-    print(unparsedCols)
+    #print(unparsedCols)
     context = parseContext(unparsedCols)
     columns = processContext(context)
-    template,preamble = prependPreamble(columns)
+    template,preamble = prependPreamble(context,columns)
+
     clues = parseClues(columns,preamble)
     rows = processClues(template,clues)
     showOutput(template,rows)
-    rows = compareNotes(template,rows)
+    while True:
+        reduce(rows)
+        #if not (newRows is None):
+        #    rows = newRows
+        newRows = compareNotes(rows)
+        if newRows is None:
+            break
+        #rows = newRows
+        #break
+
     showOutput(template,rows)
 
 if __name__ == "__main__":
