@@ -305,7 +305,8 @@ def compareNotes(rows):
     
     return rows
 
-def showOutput(template,rows):
+def showOutput(template,rows,columns):
+    template = initializeRow(*columns)
     legend = list(template.keys())
     colMembers = [len(template[l]) for l in legend]
     #print(template)
@@ -351,7 +352,7 @@ def main():
 
     clues = parseClues(columns,preamble)
     rows = processClues(template,clues)
-    showOutput(template,rows)
+    showOutput(template,rows,columns)
     while True:
         reduce(rows)
         #if not (newRows is None):
@@ -362,7 +363,7 @@ def main():
         #rows = newRows
         #break
 
-    showOutput(template,rows)
+    showOutput(template,rows,columns)
 
 if __name__ == "__main__":
     main();
