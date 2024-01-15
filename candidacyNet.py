@@ -16,8 +16,25 @@ class CCandidacyNet:
                     # Avoid cyclic generation
                     break
 
+    def getOldest(self):
+        oldest = self
+        while not oldest.older is None:
+            oldest = oldest.older
+            if oldest == self:
+                return None
+
+        return oldest
+    
     def __repr__(self):
-        return "%s,%s,%s"%(self.kind,self.candidacy,self.optional)
+        oldest = self.getOldest()
+        younger = oldest
+        results = []
+        while not younger is None:
+            results.append("%s(%s,%s)"%(younger.kind,younger.candidacy,younger.optional))
+            younger = younger.younger
+            if younger == oldest:
+                break
+        return ".".join(results)
 
     def findByKind(self,kind):
         result = None
@@ -62,7 +79,7 @@ class CCandidacyNet:
         template = None
         younger = self
         while not younger is None:
-            template = CCandidacyNet(younger.kind,None)
+            template = CCandidacyNet(younger.kind,template)
             template.populate(younger.number,younger.optional)
             younger = younger.younger
             if younger==self:
@@ -70,23 +87,19 @@ class CCandidacyNet:
         return template
     
     def getTemplate(self):
-        oldest = self
-        while not self.older is None:
-            older = self.older
-            if oldest == self:
-                return None
+        oldest = self.getOldest()
             
         return CCandidacyNet.templateFrom(oldest)
                           
-    def setCandidacy(self,instance):
+    def setCandidacy(self,attributes):
         value = -1
-        if self.kind in instance.keys():
-            value = instance[self.kind]
+        if self.kind in attributes.keys():
+            value = attributes[self.kind]
 
         if value > self.number:
             return False
         elif value > 0:
-            self.candidacy=set(value)
+            self.candidacy=set([value])
         elif value < 0:
             self.candidacy=set(range(1,self.number+1))
         elif self.optional != 0:
@@ -96,17 +109,17 @@ class CCandidacyNet:
         
         return True
 
-    def mimicInstance(self,instance):
+    def mimicInstance(self,attributes):
         checkOlder = self.older
         checkYounger = self.younger
 
-        if not self.setCandidacy(instance):
+        if not self.setCandidacy(attributes):
             return False
 
         while not ((checkOlder is None) and (checkYounger is None)):
             if not checkOlder is None:
 
-                if not checkOlder.setCandidacy(instance):
+                if not checkOlder.setCandidacy(attributes):
                     return False
                 
                 checkOlder = checkOlder.older
@@ -116,7 +129,7 @@ class CCandidacyNet:
                 
             if not checkYounger is None:
 
-                if not checkYounger.setCandidacy(instance):
+                if not checkYounger.setCandidacy(attributes):
                     return False
                 
                 checkYounger = checkYounger.younger
@@ -125,21 +138,37 @@ class CCandidacyNet:
                     return False
                 
         return True
-    
+
+def instantiate(net,context,fills,numbers,kinds):
+    from clueParserPrinter import parseClues,prependPreamble
+    columns = tuple([fills,numbers,kinds])
+    _,preamble = prependPreamble(context,columns)
+
+    clues = parseClues(columns,preamble)
+    for clue in clues:
+        cycle = []
+        for instance in clue:
+            cycle.append(net.getTemplate())
+            attributes = {}
+            for value,attribute in instance:
+                attributes[attribute]=int(value)
+            if  not cycle[-1].mimicInstance(attributes):
+                break
+        print(cycle)
+
 def main():
     from clueParserPrinter import unparsedCols,parseContext,processContext,prependPreamble
     print("Welcome from Python")
     context = parseContext(unparsedCols)
     fills,numbers,kinds = processContext(context)
-    instances = {kind:number for kind,number in zip(kinds,numbers)}
     youngest = None
     for o,kind in enumerate(kinds):
         younger = CCandidacyNet(kind,youngest)
         younger.populate(numbers[o],fills[o])
         youngest = younger
-    if youngest is not None:
-        for kind in kinds:
-            print(youngest.findByKind(kind))
+    print(youngest)
+
+    instantiate(youngest,context,fills,numbers,kinds)
 
 
 if __name__=="__main__":
