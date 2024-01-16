@@ -1,11 +1,13 @@
 from candidacyNet import CCandidacyNet
-from clueParserPrinter import parseContext,processContext,prependPreamble
+from candidacyCycle import CCandidacyCycle
+from clueParserPrinter import parseContext,processContext
 
 class CCandidacyMesh:
     def __init__(self):
         self.template = None
+        self.cycles = []
 
-    def parse(self,unparsedCols):
+    def parseCols(self,unparsedCols):
         self.template = None
         context = parseContext(unparsedCols)
         fills,numbers,kinds = processContext(context)
@@ -21,7 +23,7 @@ class CCandidacyMesh:
     
     def prependPreamble(self,unparsedCols):
         preamble = []
-        bodies = [self.parse(unparsedCols)]
+        bodies = [self.parseCols(unparsedCols)]
         if not (self.template is None):
             morekinds = set()
             for subcontext in bodies:
@@ -50,6 +52,23 @@ class CCandidacyMesh:
         preamble = "\n".join(preamble)
         return preamble
 
+    def parseRows(self,unparsedRows):
+        net = self.template
+        self.cycles = []
+        if not net is None:
+            for rowsInCycle in unparsedRows.splitlines():
+                cycle = CCandidacyCycle()
+                for individuals in rowsInCycle.split(";"):
+                    attributes={}
+                    for attribute in individuals.split("."):
+                        pair = attribute.split("^")
+                        attributes[pair[1]]=int(pair[0])
+                    instance = net.getTemplate()
+                    instance.mimicInstance(attributes)
+                    cycle.pushInstance(instance)
+                self.cycles.append(cycle)
+        return self.cycles
+
 def main():
     from clueParserPrinter import Puzzle
     print("Welcome from Python")
@@ -57,10 +76,12 @@ def main():
     unparsedCols = part[0]
     unparsedClues=part[1]
     solution = ";".join(part[2].strip().splitlines())
-    #unparsedRows = unparsedClues.rstrip()+"\n"+solution.lstrip()
     mesh = CCandidacyMesh()
     preamble = mesh.prependPreamble(unparsedCols)
-    print(preamble.rstrip()+"\n"+unparsedClues.lstrip())
+    unparsedRows = preamble.rstrip()+"\n"+unparsedClues.lstrip()
+    cycles=mesh.parseRows(unparsedRows)
+    print(cycles)
+
     print(solution.split(";"))
 
 if __name__=="__main__":

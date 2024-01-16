@@ -30,7 +30,8 @@ class CCandidacyNet:
         younger = oldest
         results = []
         while not younger is None:
-            results.append("%s(%s,%s)"%(younger.kind,younger.candidacy,younger.optional))
+            if(len(younger.candidacy)==1):
+                results.append("%s^%s"%(*younger.candidacy,younger.kind))
             younger = younger.younger
             if younger == oldest:
                 break
