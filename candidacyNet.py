@@ -32,6 +32,8 @@ class CCandidacyNet:
         while not younger is None:
             if(len(younger.candidacy)==1):
                 results.append("%s^%s"%(*younger.candidacy,younger.kind))
+            elif(len(younger.candidacy)==0) and (younger.optional!=0):
+                results.append("0^%s"%(younger.kind))
             younger = younger.younger
             if younger == oldest:
                 break
@@ -64,6 +66,41 @@ class CCandidacyNet:
                 if checkYounger == self:
                     # Avoid cyclic generation
                     return None
+        return result
+
+    def getKnowns(self):
+        result = dict()
+        if len(self.candidacy)==1:
+            result[self.kind] = list(self.candidacy)[0]
+        checkOlder = self.older
+        checkYounger = self.younger
+        while not ((checkOlder is None) and (checkYounger is None)):
+            if not checkOlder is None:
+                if checkOlder == self:
+                    # Avoid cyclic generation
+                    checkOlder = None
+                else:
+                    if len(checkOlder.candidacy)==1:
+                        result[checkOlder.kind] = list(checkOlder.candidacy)[0]
+                    checkOlder = checkOlder.older
+            if not checkYounger is None:
+                if checkYounger == self:
+                    # Avoid cyclic generation
+                    checkYounger = None
+                else:
+                    if len(checkYounger.candidacy)==1:
+                        result[checkYounger.kind] = list(checkYounger.candidacy)[0]
+                    checkYounger = checkYounger.younger
+        return result
+
+    def exclude(self,knowns):
+        result = False
+        for kind in knowns.keys():
+            sibling = self.findByKind(kind)
+            if knowns[kind] in sibling.candidacy:
+                sibling.candidacy -= {knowns[kind]}
+                if len(sibling.candidacy) <= 1:
+                    result = True
         return result
     
     def populate(self, number, optional = -1):
@@ -109,6 +146,16 @@ class CCandidacyNet:
             return False
         
         return True
+
+    def mergeNet(self,other):
+        younger = self.getOldest()
+        looped = [None]
+        while not younger in looped:
+            looped.append(younger)
+            compare = other.findByKind(younger.kind)
+            if not compare is None:
+                younger.candidacy &= compare.candidacy
+            younger = younger.younger
 
     def mimicInstance(self,attributes):
         checkOlder = self.older

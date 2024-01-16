@@ -69,6 +69,27 @@ class CCandidacyMesh:
                 self.cycles.append(cycle)
         return self.cycles
 
+    def simpleSolve(self):
+        lag = 0
+        while lag < len(self.cycles):
+            lead = lag + 1
+            lastMated = []
+            while lead < len(self.cycles):
+                mated = self.cycles[lag].mergeCycles(self.cycles[lead])
+                if mated == lastMated:
+                    lead = lead + 1
+                lastMated = mated
+            newKnowns = False
+            for cycle in self.cycles:
+                if cycle.preventDuplicates():
+                    newKnowns = True
+            if newKnowns:
+                lag = 0
+            else:
+                lag = lag + 1
+
+        return self.cycles
+
 def main():
     from clueParserPrinter import Puzzle
     print("Welcome from Python")
@@ -80,6 +101,8 @@ def main():
     preamble = mesh.prependPreamble(unparsedCols)
     unparsedRows = preamble.rstrip()+"\n"+unparsedClues.lstrip()
     cycles=mesh.parseRows(unparsedRows)
+    print(cycles)
+    cycles=mesh.simpleSolve()
     print(cycles)
 
     print(solution.split(";"))
