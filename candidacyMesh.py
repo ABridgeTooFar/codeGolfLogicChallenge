@@ -47,7 +47,7 @@ class CCandidacyMesh:
             for kind in morekinds:
                 candidacy = self.template.findByKind(kind)
                 if candidacy is not None:
-                    preamble.append( ";".join([str(val)+"^"+kind for val in candidacy.candidacy]))
+                    preamble.append( ";".join([str(val)+"^"+kind for val in candidacy.candidacy if val > 0]))
 
         preamble = "\n".join(preamble)
         return preamble
@@ -103,7 +103,7 @@ def main():
     cycles=mesh.parseRows(unparsedRows)
     print(cycles)
     cycles=mesh.simpleSolve()
-    print(cycles)
+    print(set(cycles))
 
     print(solution.split(";"))
 

@@ -1,7 +1,7 @@
 #!/bin/python3
 
 Puzzle = """
-5@All[5@P.5@C[3@B;2@G].5@W.5@I]
+5@All[5@P.5@C[2@G;3@B].5@W.5@I]
 #
 2^B.0^G;0^G.3^W;5^I
 0^B.2^G.2^P

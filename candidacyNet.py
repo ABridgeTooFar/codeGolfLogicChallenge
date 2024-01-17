@@ -31,7 +31,8 @@ class CCandidacyNet:
         results = []
         while not younger is None:
             if(len(younger.candidacy)==1):
-                results.append("%s^%s"%(*younger.candidacy,younger.kind))
+                if younger.candidacy != {0}:
+                    results.append("%s^%s"%(*younger.candidacy,younger.kind))
             elif(len(younger.candidacy)==0) and (younger.optional!=0):
                 results.append("0^%s"%(younger.kind))
             younger = younger.younger
@@ -71,7 +72,8 @@ class CCandidacyNet:
     def getKnowns(self):
         result = dict()
         if len(self.candidacy)==1:
-            result[self.kind] = list(self.candidacy)[0]
+            if self.candidacy != {0}:
+                result[self.kind] = list(self.candidacy)[0]
         checkOlder = self.older
         checkYounger = self.younger
         while not ((checkOlder is None) and (checkYounger is None)):
@@ -81,7 +83,8 @@ class CCandidacyNet:
                     checkOlder = None
                 else:
                     if len(checkOlder.candidacy)==1:
-                        result[checkOlder.kind] = list(checkOlder.candidacy)[0]
+                        if checkOlder.candidacy != {0}:
+                            result[checkOlder.kind] = list(checkOlder.candidacy)[0]
                     checkOlder = checkOlder.older
             if not checkYounger is None:
                 if checkYounger == self:
@@ -89,7 +92,8 @@ class CCandidacyNet:
                     checkYounger = None
                 else:
                     if len(checkYounger.candidacy)==1:
-                        result[checkYounger.kind] = list(checkYounger.candidacy)[0]
+                        if checkYounger.candidacy != {0}:
+                            result[checkYounger.kind] = list(checkYounger.candidacy)[0]
                     checkYounger = checkYounger.younger
         return result
 
@@ -110,7 +114,8 @@ class CCandidacyNet:
             return False
         self.number = number 
         self.optional = optional
-        self.candidacy=set(range(1,self.number+1))
+        minVal = (1 if (self.optional==0) else 0)
+        self.candidacy=set(range(minVal,self.number+1))
         return True
 
     def templateFrom(self):
