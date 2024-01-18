@@ -46,7 +46,7 @@ class CCandidacyMesh:
 
             for kind in morekinds:
                 candidacy = self.template.findByKind(kind)
-                if candidacy is not None:
+                if not (candidacy is None):
                     preamble.append( ";".join([str(val)+"^"+kind for val in candidacy.candidacy if val > 0]))
 
         preamble = "\n".join(preamble)
@@ -55,7 +55,7 @@ class CCandidacyMesh:
     def parseRows(self,unparsedRows):
         net = self.template
         self.cycles = []
-        if not net is None:
+        if not (net is None):
             for rowsInCycle in unparsedRows.splitlines():
                 cycle = CCandidacyCycle()
                 for individuals in rowsInCycle.split(";"):

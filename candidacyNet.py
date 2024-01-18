@@ -1,4 +1,15 @@
 class CCandidacyNet:
+    def forAllSiblings(self,process,*args):
+        looped = [None]
+        sibling = self
+        while not (sibling in looped):
+            process(sibling,*args)
+            sibling = sibling.younger
+        sibling = self.older
+        while not (sibling in looped):
+            process(sibling,*args)
+            sibling = sibling.older
+
     def __init__(self, kind, sibling=None):
         self.kind=kind
         self.number = 0
@@ -6,95 +17,54 @@ class CCandidacyNet:
         self.candidacy = set()
         self.older = sibling
         self.younger = None
-        while not sibling is None:
+        while not (sibling is None):
             if sibling.younger is None:
                 sibling.younger = self
                 sibling = None
+                break
             else:
                 sibling = sibling.younger
-                if sibling == self.older:
-                    # Avoid cyclic generation
-                    break
 
     def getOldest(self):
         oldest = self
         while not oldest.older is None:
             oldest = oldest.older
-            if oldest == self:
+            if oldest is self:
                 return None
 
         return oldest
     
     def __repr__(self):
-        oldest = self.getOldest()
-        younger = oldest
+        def process(sibling,results):
+            if(len(sibling.candidacy)==1):
+                if sibling.candidacy != {0}:
+                    results.append("%s^%s"%(*sibling.candidacy,sibling.kind))
+            elif(len(sibling.candidacy)==0) and (sibling.optional!=0):
+                results.append("0^%s"%(sibling.kind))
+
         results = []
-        while not younger is None:
-            if(len(younger.candidacy)==1):
-                if younger.candidacy != {0}:
-                    results.append("%s^%s"%(*younger.candidacy,younger.kind))
-            elif(len(younger.candidacy)==0) and (younger.optional!=0):
-                results.append("0^%s"%(younger.kind))
-            younger = younger.younger
-            if younger == oldest:
-                break
+        oldest = self.getOldest()
+        oldest.forAllSiblings(process,results)
         return ".".join(results)
 
     def findByKind(self,kind):
-        result = None
-        if self.kind == kind:
-            result = self
-        checkOlder = self.older
-        checkYounger = self.younger
-        while not ((checkOlder is None) and (checkYounger is None)):
-            if not checkOlder is None:
-                if checkOlder.kind == kind:
-                    if result is not None:
-                        # avoid duplicate kinds
-                        return None 
-                    result = checkOlder
-                checkOlder = checkOlder.older
-                if checkOlder == self:
-                    # Avoid cyclic generation
-                    return None
-            if not checkYounger is None:
-                if checkYounger.kind == kind:
-                    if result is not None:
-                        # avoid duplicate kinds
-                        return None 
-                    result = checkYounger
-                checkYounger = checkYounger.younger
-                if checkYounger == self:
-                    # Avoid cyclic generation
-                    return None
-        return result
+        def process(sibling,results):
+            if sibling.kind == kind:
+                results.append(sibling)
+        results = []
+        self.forAllSiblings(process,results)
+        if len(results)!=1:
+            return None
+        return results[0]
 
     def getKnowns(self):
+        def process(sibling,result):
+            if len(sibling.candidacy)==1:
+                if sibling.candidacy != {0}:
+                    result[sibling.kind] = list(sibling.candidacy)[0]
+
         result = dict()
-        if len(self.candidacy)==1:
-            if self.candidacy != {0}:
-                result[self.kind] = list(self.candidacy)[0]
-        checkOlder = self.older
-        checkYounger = self.younger
-        while not ((checkOlder is None) and (checkYounger is None)):
-            if not checkOlder is None:
-                if checkOlder == self:
-                    # Avoid cyclic generation
-                    checkOlder = None
-                else:
-                    if len(checkOlder.candidacy)==1:
-                        if checkOlder.candidacy != {0}:
-                            result[checkOlder.kind] = list(checkOlder.candidacy)[0]
-                    checkOlder = checkOlder.older
-            if not checkYounger is None:
-                if checkYounger == self:
-                    # Avoid cyclic generation
-                    checkYounger = None
-                else:
-                    if len(checkYounger.candidacy)==1:
-                        if checkYounger.candidacy != {0}:
-                            result[checkYounger.kind] = list(checkYounger.candidacy)[0]
-                    checkYounger = checkYounger.younger
+        self.forAllSiblings(process,result)
         return result
 
     def exclude(self,knowns):
@@ -103,7 +73,7 @@ class CCandidacyNet:
             sibling = self.findByKind(kind)
             if knowns[kind] in sibling.candidacy:
                 sibling.candidacy -= {knowns[kind]}
-                if len(sibling.candidacy) <= 1:
+                if len(sibling.candidacy) == 1:
                     result = True
         return result
     
@@ -121,11 +91,11 @@ class CCandidacyNet:
     def templateFrom(self):
         template = None
         younger = self
-        while not younger is None:
+        while not (younger is None):
             template = CCandidacyNet(younger.kind,template)
             template.populate(younger.number,younger.optional)
             younger = younger.younger
-            if younger==self:
+            if younger is self:
                 return None
         return template
     
@@ -158,39 +128,18 @@ class CCandidacyNet:
         while not younger in looped:
             looped.append(younger)
             compare = other.findByKind(younger.kind)
-            if not compare is None:
+            if not (compare is None):
                 younger.candidacy &= compare.candidacy
             younger = younger.younger
 
     def mimicInstance(self,attributes):
-        checkOlder = self.older
-        checkYounger = self.younger
-
-        if not self.setCandidacy(attributes):
-            return False
-
-        while not ((checkOlder is None) and (checkYounger is None)):
-            if not checkOlder is None:
-
-                if not checkOlder.setCandidacy(attributes):
-                    return False
+        result = True
+        def process(sibling,attributes,result):
+            if not sibling.setCandidacy(attributes):
+                result = False
                 
-                checkOlder = checkOlder.older
-                if checkOlder == self:
-                    # Avoid cyclic generation
-                    return False
-                
-            if not checkYounger is None:
-
-                if not checkYounger.setCandidacy(attributes):
-                    return False
-                
-                checkYounger = checkYounger.younger
-                if checkYounger == self:
-                    # Avoid cyclic generation
-                    return False
-                
-        return True
+        self.forAllSiblings(process,attributes,result)
+        return result
 
 def instantiate(net,context,fills,numbers,kinds):
     from clueParserPrinter import parseClues,prependPreamble
