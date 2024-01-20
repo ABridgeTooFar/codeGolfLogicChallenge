@@ -3,13 +3,15 @@ class CCandidacyNet:
         looped = [None]
         sibling = self
         while not (sibling in looped):
-            process(sibling,*args)
+            args = process(sibling,*args)
             sibling = sibling.younger
         sibling = self.older
         while not (sibling in looped):
-            process(sibling,*args)
+            args = process(sibling,*args)
             sibling = sibling.older
 
+        return args
+    
     def __init__(self, kind, sibling=None):
         self.kind=kind
         self.number = 0
@@ -42,17 +44,21 @@ class CCandidacyNet:
             elif(len(sibling.candidacy)==0) and (sibling.optional!=0):
                 results.append("0^%s"%(sibling.kind))
 
+            return [results]
+        
         results = []
         oldest = self.getOldest()
-        oldest.forAllSiblings(process,results)
+        results, = oldest.forAllSiblings(process,results)
         return ".".join(results)
 
     def findByKind(self,kind):
         def process(sibling,results):
             if sibling.kind == kind:
                 results.append(sibling)
+            return [results]
+        
         results = []
-        self.forAllSiblings(process,results)
+        results, = self.forAllSiblings(process,results)
         if len(results)!=1:
             return None
         return results[0]
@@ -62,9 +68,10 @@ class CCandidacyNet:
             if len(sibling.candidacy)==1:
                 if sibling.candidacy != {0}:
                     result[sibling.kind] = list(sibling.candidacy)[0]
-
+            return [result]
+        
         result = dict()
-        self.forAllSiblings(process,result)
+        result, = self.forAllSiblings(process,result)
         return result
 
     def exclude(self,knowns):
@@ -137,8 +144,9 @@ class CCandidacyNet:
         def process(sibling,attributes,result):
             if not sibling.setCandidacy(attributes):
                 result = False
-                
-        self.forAllSiblings(process,attributes,result)
+            return [attributes,result]
+        
+        attributes,result, = self.forAllSiblings(process,attributes,result)
         return result
 
 def instantiate(net,context,fills,numbers,kinds):
