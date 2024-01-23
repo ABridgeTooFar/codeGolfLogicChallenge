@@ -52,7 +52,7 @@ class CShoot(CLinkedTree):
 
 def main():
     print("Welcome from Python")
-    linkedList = None
+    linkedTree = None
     for i in range(10):
         linkedTree = CLinkedTree(linkedTree)
     print(linkedTree)
