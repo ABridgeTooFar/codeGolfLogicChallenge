@@ -1,27 +1,6 @@
 #!/bin/python3
 
-from linkedTreeOverload import CLinkedTreeOverload
-
-class CLegend(CLinkedTreeOverload):    
-    def __init__(self, key, value, binder, sibling=None):
-        super().__init__(tuple([key,int(value),binder]),sibling)
-
-    def emit(self):
-        return "(%s,%i,%s)"%(self.data[0],self.data[1],self.data[2])
-    
-    def __repr__(self):
-        def process(self,results):
-            results += self.emit()
-            recurse = self.descendent
-            if not (recurse is None):
-                results += "[" + recurse.__repr__() + "]"
-            return [results]
-        
-        results = ""
-        results, = self.walkAll(process,results)
-        return results
-
-
+from legend import CLegend
 
 Puzzle = """
 5@All[5@P.5@C[2@G;3@B].5@W.5@I]
@@ -133,7 +112,7 @@ def parseContext(scope):
 def handleOffshoots(shoot):
     tree = None
     for howMany,whatKind,offshoot,howBound, in shoot:
-        tree = CLegend(whatKind,howMany,howBound,tree)
+        tree = CLegend(tree,key=whatKind,value=int(howMany),type=howBound)
         if len(offshoot)>0:
             branch = handleOffshoots(offshoot)
             tree.tee(branch)
@@ -406,7 +385,7 @@ def main():
     #print(tree)
     legend = tree.flatten()
     #print(legend)
-    map = {shoot.data[0]:pos for pos,shoot in enumerate(legend)}
+    map = {shoot.data['key']:pos for pos,shoot in enumerate(legend)}
     print(",".join(map.keys()))
     row = 0
     matrix = dict()
@@ -415,13 +394,16 @@ def main():
         o = 0
         for entity in clue:
             o += 1
-            template = [set(range(1,1+shoot.data[1])) for shoot in legend]
+            template = [set(
+                            range(( 0 if (shoot.data['type']==';') else 1),
+                                    1+shoot.data['value'])) 
+                        for shoot in legend]
             for attribute in entity:
                 pos = map[attribute[1]]
-                if attribute[0] == '0':
-                    template[pos].clear()
-                else:
+                if int(attribute[0]) in template[pos]:
                     template[pos]={int(attribute[0])}
+                else:
+                    template[pos].clear()
             rows.append(template)
         matrix[row]=rows
         row += o

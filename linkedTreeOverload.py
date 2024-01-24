@@ -2,12 +2,12 @@ from linkedTree import CShoot
 
 class CLinkedTreeOverload(CShoot):
     
-    def __init__(self, data, sibling=None):
-        self.data = data
+    def __init__(self, sibling=None, **kwargs):
+        self.data = kwargs
         super().__init__(sibling)
 
     def emit(self):
-        return self.data
+        return self.data['default']
     
     def __repr__(self):
         def process(self,results):
@@ -27,7 +27,7 @@ def main():
     linkedTree = None
     word = "Hello, Linked Tree"
     for data in word:
-        linkedTree = CLinkedTreeOverload(data,linkedTree)
+        linkedTree = CLinkedTreeOverload(linkedTree,default=data)
     print(linkedTree)
     print(CShoot.__repr__(linkedTree))
     print(linkedTree.data)
