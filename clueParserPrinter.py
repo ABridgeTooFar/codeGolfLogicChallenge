@@ -1,5 +1,28 @@
 #!/bin/python3
 
+from linkedTreeOverload import CLinkedTreeOverload
+
+class CLegend(CLinkedTreeOverload):    
+    def __init__(self, key, value, binder, sibling=None):
+        super().__init__(tuple([key,int(value),binder]),sibling)
+
+    def emit(self):
+        return "(%s,%i,%s)"%(self.data[0],self.data[1],self.data[2])
+    
+    def __repr__(self):
+        def process(self,results):
+            results += self.emit()
+            recurse = self.descendent
+            if not (recurse is None):
+                results += "[" + recurse.__repr__() + "]"
+            return [results]
+        
+        results = ""
+        results, = self.walkAll(process,results)
+        return results
+
+
+
 Puzzle = """
 5@All[5@P.5@C[2@G;3@B].5@W.5@I]
 #
@@ -97,7 +120,6 @@ def parseContext(scope):
             else:
                 howBound = ''
             result.append(tuple([howMany,whatKind,body,howBound]))
-
             minL = bodyStop+1
             l = minL
             numStop = -1
@@ -107,6 +129,20 @@ def parseContext(scope):
             phase = 0
 
     return result
+
+def handleOffshoots(shoot):
+    tree = None
+    for howMany,whatKind,offshoot,howBound, in shoot:
+        tree = CLegend(whatKind,howMany,howBound,tree)
+        if len(offshoot)>0:
+            branch = handleOffshoots(offshoot)
+            tree.tee(branch)
+    return tree
+
+def contextToTree(scope):
+    shoot = parseContext(scope)
+    tree = handleOffshoots(shoot)
+    return shoot,tree
 
 def parseClues(context,preamble):
     clues = []
@@ -344,9 +380,11 @@ def showOutput(template,rows,columns):
         print("|"+"="*(separator-1)+"|")
 
 def main():
+
     print("Welcome from Python")
     #print(unparsedCols)
-    context = parseContext(unparsedCols)
+
+    context,tree = contextToTree(unparsedCols)
     columns = processContext(context)
     template,preamble = prependPreamble(context,columns)
 
@@ -364,6 +402,34 @@ def main():
         #break
 
     showOutput(template,rows,columns)
+    #print(context)
+    #print(tree)
+    legend = tree.flatten()
+    #print(legend)
+    map = {shoot.data[0]:pos for pos,shoot in enumerate(legend)}
+    print(",".join(map.keys()))
+    row = 0
+    matrix = dict()
+    for clue in clues[:-1]:
+        rows = []
+        o = 0
+        for entity in clue:
+            o += 1
+            template = [set(range(1,1+shoot.data[1])) for shoot in legend]
+            for attribute in entity:
+                pos = map[attribute[1]]
+                if attribute[0] == '0':
+                    template[pos].clear()
+                else:
+                    template[pos]={int(attribute[0])}
+            rows.append(template)
+        matrix[row]=rows
+        row += o
+    for group in matrix:
+        print("{")
+        for o,row in enumerate(matrix[group]):
+            print(row,1+group+o)
+        print("}")
 
 if __name__ == "__main__":
     main();

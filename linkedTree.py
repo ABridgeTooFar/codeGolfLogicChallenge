@@ -44,8 +44,20 @@ class CLinkedTree:
         return results
 
 class CShoot(CLinkedTree):
-    def __init__(self,sibling=None):
-        super().__init__(sibling)
+    def __init__(self, sibling=None):
+        self.descendent = None
+        if sibling is None:
+            self.oldest = self
+            self.younger = None
+        else:
+            self.oldest = sibling.oldest
+            self.younger = None
+            adoptee=sibling.younger
+            self.descendent = adoptee
+            while not (adoptee is None):
+                adoptee.oldest = sibling.younger
+                adoptee = adoptee.younger
+            sibling.younger = self
 
     def tee(self,branch):
         self.descendent = branch.oldest

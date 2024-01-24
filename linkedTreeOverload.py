@@ -6,9 +6,12 @@ class CLinkedTreeOverload(CShoot):
         self.data = data
         super().__init__(sibling)
 
+    def emit(self):
+        return self.data
+    
     def __repr__(self):
         def process(self,results):
-            results += self.data
+            results += self.emit()
             recurse = self.descendent
             if not (recurse is None):
                 results += recurse.__repr__()
