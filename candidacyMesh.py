@@ -1,6 +1,7 @@
 from candidacyNet import CCandidacyNet
 from candidacyCycle import CCandidacyCycle
-from clueParserPrinter import parseContext,processContext
+from legend import contextToTree
+from clueParserPrinter import processContext
 
 class CCandidacyMesh:
     def __init__(self):
@@ -9,7 +10,7 @@ class CCandidacyMesh:
 
     def parseCols(self,unparsedCols):
         self.template = None
-        context = parseContext(unparsedCols)
+        context,_ = contextToTree(unparsedCols)
         fills,numbers,kinds = processContext(context)
         youngest = self.template
         for o,kind in enumerate(kinds):

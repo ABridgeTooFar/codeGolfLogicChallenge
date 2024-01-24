@@ -167,9 +167,10 @@ def instantiate(net,context,fills,numbers,kinds):
         print(cycle)
 
 def main():
-    from clueParserPrinter import unparsedCols,parseContext,processContext,prependPreamble
+    from legend import contextToTree
+    from clueParserPrinter import unparsedCols,processContext,prependPreamble
     print("Welcome from Python")
-    context = parseContext(unparsedCols)
+    context,_ = contextToTree(unparsedCols)
     fills,numbers,kinds = processContext(context)
     youngest = None
     for o,kind in enumerate(kinds):
