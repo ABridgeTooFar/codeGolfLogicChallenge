@@ -29,7 +29,8 @@ unparsedRows=part[1].rstrip()+"\n"+solution.lstrip()
 
 def parseClues(context,preamble):
     clues = []
-    for line in (preamble+unparsedRows).splitlines():
+    combo = preamble.rstrip()+"\n"+scope.lstrip()
+    for line in combo.splitlines():
         if len(line.strip()) == 0:
             continue
         clues.append([]);
@@ -267,7 +268,7 @@ def main():
     print("Welcome from Python")
     #print(unparsedCols)
 
-    context,tree = contextToTree(unparsedCols)
+    context,_ = contextToTree(unparsedCols)
     columns = processContext(context)
     template,preamble = prependPreamble(context,columns)
 
@@ -285,37 +286,6 @@ def main():
         #break
 
     showOutput(template,rows,columns)
-    #print(context)
-    #print(tree)
-    legend = tree.flatten()
-    #print(legend)
-    map = {shoot.data['key']:pos for pos,shoot in enumerate(legend)}
-    print(",".join(map.keys()))
-    row = 0
-    matrix = dict()
-    for clue in clues[:-1]:
-        rows = []
-        o = 0
-        for entity in clue:
-            o += 1
-            template = [set(
-                            range(( 0 if (shoot.data['type']==';') else 1),
-                                    1+shoot.data['value'])) 
-                        for shoot in legend]
-            for attribute in entity:
-                pos = map[attribute[1]]
-                if int(attribute[0]) in template[pos]:
-                    template[pos]={int(attribute[0])}
-                else:
-                    template[pos].clear()
-            rows.append(template)
-        matrix[row]=rows
-        row += o
-    for group in matrix:
-        print("{")
-        for o,row in enumerate(matrix[group]):
-            print(row,1+group+o)
-        print("}")
 
 if __name__ == "__main__":
     main();
