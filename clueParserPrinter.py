@@ -27,7 +27,7 @@ solution = ";".join(part[2].strip().splitlines())
 # print(solution)
 unparsedRows=part[1].rstrip()+"\n"+solution.lstrip()
 
-def parseClues(context,preamble):
+def parseClues(preamble,scope):
     clues = []
     combo = preamble.rstrip()+"\n"+scope.lstrip()
     for line in combo.splitlines():
@@ -272,7 +272,7 @@ def main():
     columns = processContext(context)
     template,preamble = prependPreamble(context,columns)
 
-    clues = parseClues(columns,preamble)
+    clues = parseClues(preamble,unparsedRows)
     rows = processClues(template,clues)
     showOutput(template,rows,columns)
     while True:
