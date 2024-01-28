@@ -260,7 +260,7 @@ def main(**kwargs):
     clues = parseClues(preamble,unparsedClues)
     solver = CClueMatrix(tree,[*zip(kinds,fills)],clues)
     tryAgain = True
-    goodMeasure = True
+    goodMeasure = False #True
     while tryAgain:
         solver.assertDistinctWithinGroup()
         newKnowns = solver.assertQuotaWithinGroup()
@@ -269,7 +269,8 @@ def main(**kwargs):
             tryAgain = goodMeasure
             goodMeasure = False
         else:
-            goodMeasure = True
+            #goodMeasure = True
+            pass
         
     print(solver)
 
