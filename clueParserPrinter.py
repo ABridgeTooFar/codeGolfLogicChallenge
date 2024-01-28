@@ -2,31 +2,6 @@
 
 from legend import contextToTree
 
-Puzzle = """
-5@All[5@P.5@C[2@G;3@B].5@W.5@I]
-#
-2^B.0^G;0^G.3^W;5^I
-0^B.2^G.2^P
-0^B.4^W.2^I
-0^B.1^P
-0^B.1^G.1^I
-3^B.0^G.1^W
-5^W.5^P
-4^I.4^P
-#
-1^C.1^G.0^B.1^I.1^P.2^W
-2^C.2^G.0^B.2^I.2^P.4^W
-3^C.0^G.1^B.4^I.4^P.3^W
-4^C.0^G.2^B.3^I.5^P.5^W
-5^C.0^G.3^B.5^I.3^P.1^W
-"""
-
-part = Puzzle.split("#")
-unparsedCols = part[0]
-solution = ";".join(part[2].strip().splitlines())
-# print(solution)
-unparsedRows=part[1].rstrip()+"\n"+solution.lstrip()
-
 def parseClues(preamble,scope):
     clues = []
     combo = preamble.rstrip()+"\n"+scope.lstrip()
@@ -263,18 +238,26 @@ def showOutput(template,rows,columns):
     if separator > 0:
         print("|"+"="*(separator-1)+"|")
 
-def main():
+Puzzle = ""
 
+def main(**kwargs):
+    global Puzzle
     print("Welcome from Python")
     #print(unparsedCols)
 
+    with open(kwargs['puzzleFile']) as file:
+        lines=file.readlines()
+        Puzzle="".join(lines)
+    part = Puzzle.split("#")
+    unparsedCols = part[0]
+    unparsedRows=part[1]
     context,_ = contextToTree(unparsedCols)
     columns = processContext(context)
     template,preamble = prependPreamble(context,columns)
 
     clues = parseClues(preamble,unparsedRows)
     rows = processClues(template,clues)
-    showOutput(template,rows,columns)
+    #showOutput(template,rows,columns)
     while True:
         reduce(rows)
         #if not (newRows is None):
@@ -287,5 +270,22 @@ def main():
 
     showOutput(template,rows,columns)
 
+    if len(part)>2:
+        solution = ";".join(part[2].strip().splitlines())
+        goal = parseClues(preamble,solution)
+        rows = processClues(template,goal)
+        while True:
+            reduce(rows)
+            #if not (newRows is None):
+            #    rows = newRows
+            newRows = compareNotes(rows)
+            if newRows is None:
+                break
+        showOutput(template,rows,columns)
+
 if __name__ == "__main__":
-    main();
+    import sys
+    puzzleFile = "PCgbWI.txt"
+    if len(sys.argv)>1:
+        puzzleFile = sys.argv[0]
+    main( puzzleFile = puzzleFile )

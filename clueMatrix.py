@@ -1,5 +1,4 @@
 from legend import contextToTree
-from clueParserPrinter import Puzzle
 
 class CClueMatrix():
     def __init__(self,tree,fills,clues):
@@ -57,8 +56,7 @@ class CClueMatrix():
 
                     result +="|%s"%"".join(tab)
                 result += "| %i\n"%(1+group+o)
-            result += "=".join(["="*w for w in self.width])+"==\n"
-        print(self.map)
+        result += "=".join(["="*w for w in self.width])+"==\n"
         return result
 
     def assertDistinctWithinGroup(self):
@@ -132,7 +130,6 @@ class CClueMatrix():
                             if member[col]=={0}:
                                 continue
                             if 0 in member[col]:
-                                print("=========",member[col])
                                 newKnowns += 1
                                 member[col] -= {0}
         return newKnowns
@@ -208,6 +205,7 @@ def generatePreamble(context,kinds,numbers):
                             break
                         membership.append( "%i^%s.%i^%s"%(member+1,id,val+1,childId))
                         member += 1
+                    skipid.update({childId})
                     if bond != ";":
                         break
                 preamble.append( ";".join(membership))
@@ -237,37 +235,48 @@ def parseClues(preamble,scope):
     #print(clues)
     return clues
 
-def main():
+def main(**kwargs):
 
     print("Welcome from Python")
 
+    Puzzle = None
+    with open(kwargs['puzzleFile']) as file:
+        lines=file.readlines()
+        Puzzle="".join(lines)
     part = Puzzle.split("#")
     unparsedCols = part[0]
     unparsedClues=part[1]
-    hint = ";".join(part[2].strip().splitlines())
-    #print(hint)
+
     context,tree = contextToTree(unparsedCols)
     fills,numbers,kinds = processContext(context)
+
+    if len(part)>2:
+        hint = ";".join(part[2].strip().splitlines())
+        solution = parseClues("",hint)
+        goal = CClueMatrix(tree,[*zip(kinds,fills)],solution)
+        print(goal)
+
     preamble = generatePreamble(context,kinds,numbers)
-
-    solution = parseClues(preamble,hint)
-    #print(solution)
-    goal = CClueMatrix(tree,[*zip(kinds,fills)],solution)
-    print(goal)
-
     clues = parseClues(preamble,unparsedClues)
     solver = CClueMatrix(tree,[*zip(kinds,fills)],clues)
-    print(solver)
     tryAgain = True
+    goodMeasure = True
     while tryAgain:
         solver.assertDistinctWithinGroup()
         newKnowns = solver.assertQuotaWithinGroup()
         changed = solver.matchAndMate()
         if newKnowns < 1 and not changed:
-            tryAgain = False
+            tryAgain = goodMeasure
+            goodMeasure = False
+        else:
+            goodMeasure = True
         
     print(solver)
 
 
 if __name__ == "__main__":
-    main();
+    import sys
+    puzzleFile = "PCgbWI.txt"
+    if len(sys.argv)>1:
+        puzzleFile = sys.argv[1]
+    main( puzzleFile = puzzleFile )
