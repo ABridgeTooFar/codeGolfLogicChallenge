@@ -1,6 +1,18 @@
 from linkedTree import CShoot
 
 class CLinkedTreeOverload(CShoot):
+    def walkIter(self):
+        sibling = self.oldest
+        while not (sibling is None):
+            yield sibling
+            recurse = self.descendent
+            if not (recurse is None):
+                for descendent in recurse.walkIter():
+                    yield descendent
+            sibling = sibling.younger
+
+        return None
+
     
     def __init__(self, sibling=None, **kwargs):
         self.data = kwargs

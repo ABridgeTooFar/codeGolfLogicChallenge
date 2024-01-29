@@ -1,4 +1,14 @@
 class CLinkedTree:
+    def walkIter(self):
+        looped = [None]
+        sibling = self.oldest
+        while not any([sibling is other for other in looped]):
+            yield sibling
+            looped.append(sibling)
+            sibling = sibling.younger
+
+        return None
+
     def walkAll(self,process,*args):
         looped = [None]
         sibling = self.oldest
