@@ -1,26 +1,18 @@
 class CLinkedTree:
-    def walkIter(self):
-        looped = [None]
+    def __iter__(self):
         sibling = self.oldest
-        while not any([sibling is other for other in looped]):
+        while sibling:
             yield sibling
-            looped.append(sibling)
+            if self.recurse:
+                for recurse in self.recurse:
+                    yield recurse
             sibling = sibling.younger
 
-        return None
+        return
 
-    def walkAll(self,process,*args):
-        looped = [None]
-        sibling = self.oldest
-        while not any([sibling is other for other in looped]):
-            args = process(sibling,*args)
-            looped.append(sibling)
-            sibling = sibling.younger
-
-        return args
-    
-    def __init__(self, sibling=None):
-        self.descendent = None
+    def __init__(self, sibling=None,*recurse, **kwargs):
+        self.recurse = recurse
+        self.payload = ({**kwargs} if kwargs else dict())
         if sibling is None:
             self.oldest = self
             self.younger = None
@@ -30,66 +22,69 @@ class CLinkedTree:
             sibling.younger = self
 
     def __repr__(self):
-        def process(self,results):
-            results.append("%i"%(len(results)))
-            recurse = self.descendent
-            if not (recurse is None):
-                results.append(recurse.__repr__())
-            return [results]
-        
-        results = []
-        results, = self.walkAll(process,results)
-        return "["+",".join(results)+"]"
+        return "[%s{%i}]"%(str(self.payload),len(self.recurse))
 
-    def flatten(self):
-        def process(self,results):
-            results.append(self)
-            recurse = self.descendent
-            if not (recurse is None):
-                results += recurse.flatten()
-            return [results]
-        
-        results = []
-        results, = self.walkAll(process,results)
-        return results
+def readTape(delimiters, tape, pos=0, delimiter = ''):
+    assert (pos>=len(tape) or tape[pos] in delimiters.values()),"illegal start"
+    payloads = []
 
-class CShoot(CLinkedTree):
-    def __init__(self, sibling=None):
-        self.descendent = None
-        if sibling is None:
-            self.oldest = self
-            self.younger = None
+    pos+=len(delimiter)
+    lastpos = pos
+    while pos<len(tape):
+        c=tape[pos]
+        if c in delimiters.values() and not (c == delimiter):
+            if pos>lastpos:
+                payload=tape[lastpos:pos]
+                payloads.append(payload)
+                lastpos = pos
+            pos,recurse = readTape(delimiters,tape, pos, delimiter = c)
+            assert pos<len(tape),"Unmatched delimiter"
+            assert (tape[pos] in delimiters),"Unmatched delimiter"
+            assert (delimiters[tape[pos]] == c),"Unmatched delimiter"
+            payloads.append(recurse)
+        elif c in delimiters.keys():
+            assert (delimiter == delimiters[c]),"Unmatched delimiter"
+            payload=tape[lastpos:pos]
+            payloads.append(payload)
+            return (pos,payloads)
+        
+        pos += 1
+
+    payload=tape[lastpos:pos]
+    payloads.append(payload)
+    return (pos,payloads)
+
+def embody(*args):
+    pos = 0
+    recurse = []
+    while pos < len(args):
+        if type(args[pos]) == type([]):
+            recurse = args[pos]
         else:
-            self.oldest = sibling.oldest
-            self.younger = None
-            adoptee=sibling.younger
-            self.descendent = adoptee
-            while not (adoptee is None):
-                adoptee.oldest = sibling.younger
-                adoptee = adoptee.younger
-            sibling.younger = self
-
-    def tee(self,branch):
-        self.descendent = branch.oldest
+            if recurse:
+                result = CLinkedTree(None,*recurse,**{'meta':args[pos]})
+                print(result)
+            else:
+                result = CLinkedTree(None,**{'meta':args[pos]})
+                print(result)
+            recurse = []
+        pos+=1
+    return recurse
 
 def main():
     print("Welcome from Python")
-    linkedTree = None
-    for i in range(10):
-        linkedTree = CLinkedTree(linkedTree)
-    print(linkedTree)
+    delimiters = { closer:opener for opener,closer in zip("{(<#","})>#") }
+    tape = "<1#Hydroxyapatite#>{Ca10(PO4)6(OH)2}"
+    pos,payloads = readTape(delimiters,tape)
+    if pos == len(tape):
+        print(payloads)
+        embody(*payloads)
 
-    root = CShoot()
-    trunk = CShoot()
-    branch = CShoot()
-    for i in range(5):
-        trunk = CShoot(trunk)
-    root.tee(trunk)
-    for i in range(2):
-        branch = CShoot(branch)
-    segments = trunk.flatten()
-    segments[3].tee(branch)
-    print(root)
+    linkedTree = None
+    for id in range(10):
+        linkedTree = CLinkedTree(linkedTree,**{'id':id})
+    for shoot in linkedTree:
+        pass #print(shoot)
 
 if __name__=="__main__":
     main()

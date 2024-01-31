@@ -24,6 +24,18 @@ class CLegend(CLinkedTreeOverload):
         results, = self.walkAll(process,results)
         return results
 
+    def flatten(self):
+        def process(self,results):
+            results.append(self)
+            recurse = self.descendent
+            if not (recurse is None):
+                results += recurse.flatten()
+            return [results]
+        
+        results = []
+        results, = self.walkLine(process,results)
+        return results
+
 def handleOffshoots(shoot):
     tree = None
     for howMany,whatKind,offshoot,howBound, in shoot:

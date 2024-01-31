@@ -1,6 +1,4 @@
-from linkedTree import CShoot
-
-class CLinkedTreeOverload(CShoot):
+class CLinkedTreeOverload():
     def walkIter(self):
         sibling = self.oldest
         while not (sibling is None):
@@ -13,10 +11,26 @@ class CLinkedTreeOverload(CShoot):
 
         return None
 
+    def walkLine(self,process,*args):
+        looped = [None]
+        sibling = self.oldest
+        while not any([sibling is other for other in looped]):
+            args = process(sibling,*args)
+            looped.append(sibling)
+            sibling = sibling.younger
+
+        return args
     
     def __init__(self, sibling=None, **kwargs):
         self.data = kwargs
-        super().__init__(sibling)
+        self.descendent = None
+        if sibling is None:
+            self.oldest = self
+            self.younger = None
+        else:
+            self.oldest = sibling.oldest
+            self.younger = sibling.younger
+            sibling.younger = self
 
     def emit(self):
         return self.data['default']
@@ -30,9 +44,11 @@ class CLinkedTreeOverload(CShoot):
             return [results]
         
         results = ""
-        results, = self.walkAll(process,results)
+        results, = self.walkLine(process,results)
         return results
 
+    def tee(self,branch):
+        self.descendent = branch.oldest
 
 def main():
     print("Welcome from Python")
@@ -41,7 +57,6 @@ def main():
     for data in word:
         linkedTree = CLinkedTreeOverload(linkedTree,default=data)
     print(linkedTree)
-    print(CShoot.__repr__(linkedTree))
     print(linkedTree.data)
 
 
