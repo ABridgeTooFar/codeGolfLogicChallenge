@@ -1,9 +1,11 @@
+from solver import solve
+
 if __name__ == "__main__":
     import sys
     Puzzle = None
     with open("matrix.in") as file:
         lines=file.readlines()
-        Puzzle="\n".join(lines)
+        Puzzle="".join(lines)
     matrix = []
     rows = []
     allFills = dict()
@@ -40,3 +42,5 @@ if __name__ == "__main__":
                     row.append({value})
             rows.append(row)
     print(matrix,allWidths,allFills)
+    assert len(allWidths)==1,""
+    solve(matrix,int(*allWidths),[int(*allFills[o]) for o in sorted(allFills.keys())])
