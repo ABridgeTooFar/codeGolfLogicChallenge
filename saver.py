@@ -31,7 +31,7 @@ if __name__ == "__main__":
                     allFills[o]={fill}
 
             for col,count,fill in zip(cols[:-1],counts,fills):
-                if col == ' '*count:
+                if col in [' '*count,'-'*count]:
                     row.append(set(range(1,count+1)))
                 elif col == '?'*count:
                     row.append(set(range(0,count+1)))
