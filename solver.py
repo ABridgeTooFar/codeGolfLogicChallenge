@@ -187,3 +187,19 @@ def unrender(Puzzle):
             rows.append(row)
     assert len(allWidths)==1,""
     return solve(matrix,int(*allWidths),[int(*allFills[o]) for o in sorted(allFills.keys())])
+
+def main(**kwargs):
+    Puzzle = None
+    with open(kwargs['puzzleFile']) as file:
+        lines=file.readlines()
+        Puzzle = "".join(lines)
+
+    results = unrender(Puzzle)
+    print(results)
+    
+if __name__ == "__main__":
+    import sys
+    puzzleFile = "PCgbWI.in"
+    if len(sys.argv)>1:
+        puzzleFile = sys.argv[1]
+    main( puzzleFile = puzzleFile )
