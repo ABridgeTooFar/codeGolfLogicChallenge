@@ -21,7 +21,7 @@ class CLegend(CLinkedTreeOverload):
             return [results]
         
         results = ""
-        results, = self.walkAll(process,results)
+        results, = self.walkLine(process,results)
         return results
 
     def flatten(self):

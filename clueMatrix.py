@@ -161,11 +161,7 @@ def parseClues(preamble,scope):
     #print(clues)
     return clues
 
-def main(**kwargs):
-    from solver import unrender
-
-    print("Welcome from Python")
-
+def generate(**kwargs):
     Puzzle = None
     with open(kwargs['puzzleFile']) as file:
         lines=file.readlines()
@@ -177,15 +173,28 @@ def main(**kwargs):
     context,tree = contextToTree(unparsedCols)
     fills,numbers,kinds = processContext(context)
 
-    if len(part)>2:
-        hint = ";".join(part[2].strip().splitlines())
-        solution = parseClues("",hint)
-        goal = CClueMatrix(tree,[*zip(kinds,fills)],solution)
-        print(goal)
-
     preamble = generatePreamble(context,kinds,numbers)
     clues = parseClues(preamble,unparsedClues)
     renderer = CClueMatrix(tree,[*zip(kinds,fills)],clues)
+    return renderer,part[2:]
+
+def main(**kwargs):
+    from solver import unrender
+
+    print("Welcome from Python")
+
+    renderer,extraParts = generate(**kwargs)
+
+    if len(extraParts)>0:
+        sortedKeys = [shoot.data['key'] for shoot in renderer.legend]
+        hint = ";".join(extraParts[0].strip().splitlines())
+        solution = parseClues("",hint)
+        group = solution[-1]
+        #print(sortedKeys)
+        for individual in group:
+            attributes = {attribute:value for value,attribute in individual}
+            print(",".join([attributes[key] for key in sortedKeys if key in attributes]))
+
     results = unrender(renderer.export())
     print(results)
 
