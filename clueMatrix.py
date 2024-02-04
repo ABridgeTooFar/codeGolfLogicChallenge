@@ -59,106 +59,32 @@ class CClueMatrix():
         result += "=".join(["="*w for w in self.width])+"==\n"
         return result
 
-    def assertDistinctWithinGroup(self):
+    def export(self):
+        result = ""
         for group in self.matrix:
-            members = self.matrix[group]
-            keys = list(self.map.keys())
-            k = 0
-            while k < len(keys):                
-                col = self.map[keys[k]]
-                knowns = dict()
-                o = 0
-                while o <len(members):
-                    if len(members[o][col])==1 and not (0 in members[o][col]):
-                        knowns[o]=int(*members[o][col])
-                    o += 1
-                newKnowns = 0
-                for known in knowns:
-                    others = [o for o in range(len(members)) if o != known]
-                    for other in others:
-                        members[other][col]-={knowns[known]}
-                        if len(members[other][col])==1:
-                            if members[other][col]!={0} and not other in knowns:
-                                newKnowns += 1
-                if newKnowns>0:
-                    k = 0
-                else:
-                    k += 1
+            result += "=".join(["="*w for w in self.width])+"==\n"
+            for o,row in enumerate(self.matrix[group]):
+                for oo,candidates in enumerate(row):
+                    tab = [" "]*self.width[oo]
+                    if 0 in candidates:
+                        if len(candidates) == 1:
+                            tab = ["0"]*self.width[oo]
+                        else:
+                            tab = ["X"]*self.width[oo]
+                            for candidate in candidates:
+                                if candidate != 0:
+                                    tab[candidate-1]="?"
+                    elif len(candidates)==1:
+                        tab = [" "]*self.width[oo]
+                        for candidate in candidates:
+                            tab[candidate-1]=str(candidate)
+                    elif self.nulls[oo]>0:
+                        tab = "-"**self.width[oo] #["%i"%self.nulls[oo]]*self.width[oo]
 
-    def assertQuotaWithinGroup(self):
-        newKnowns = 0
-        for group in self.matrix:
-            members = self.matrix[group]
-            for key in self.map.keys():                
-                col = self.map[key]
-                absences = 0
-                for member in members:
-                    if member[col]=={0}:
-                        absences+=1
-                if absences >= self.nulls[col]:
-                    for member in members:
-                        if len(member[col])>1 and 0 in member[col]:
-                            member[col] -= {0}
-                            if(len(member[col])==1):
-                                newKnowns += 1
-        subgroups = []
-        o = 0
-        while o<len(self.legend):
-            shoot = self.legend[o]
-            if shoot.data['type'] == ';':
-                subgroups.append([])
-                start = shoot.oldest
-                while (not (shoot is None)) and shoot.oldest is start:
-                    subgroups[-1].append(shoot.data['key'])
-                    o += 1
-                    shoot = shoot.younger
-            else:
-                o += 1
-
-        for group in self.matrix:
-            members = self.matrix[group]
-            for member in members:
-                for subgroup in subgroups:
-                    absences = 0
-                    for key in subgroup:
-                        col = self.map[key]
-                        if member[col]=={0}:
-                            absences += 1
-                    if absences+1 == len(subgroup):
-                        for key in subgroup:
-                            col = self.map[key]
-                            if member[col]=={0}:
-                                continue
-                            if 0 in member[col]:
-                                newKnowns += 1
-                                member[col] -= {0}
-        return newKnowns
-
-    def matchAndMate(self):
-        changed = False
-        keys = list(self.map.keys())
-        mates = {(key,value,): [] for key in keys for value in range(1,self.width[self.map[key]]+1)}
-        for group in self.matrix:
-            members = self.matrix[group]
-            for key in keys:                
-                col = self.map[key]
-                o = 0
-                while o <len(members):
-                    if len(members[o][col])==1 and not (0 in members[o][col]):
-                        mates[(key,int(*members[o][col]),)].append((group,o,))
-                    o += 1
-        for mate in mates:
-            for o,member in enumerate(mates[mate]):                
-                for oo,partner in enumerate(mates[mate]):
-                    if oo == o:
-                        continue
-                    for key in keys:                
-                        col = self.map[key]
-                        self.matrix[group]
-                        if(self.matrix[member[0]][member[1]][col] != self.matrix[partner[0]][partner[1]][col]):
-                            self.matrix[member[0]][member[1]][col]&=self.matrix[partner[0]][partner[1]][col]
-                            changed = True
-        return changed
+                    result +="|%s"%"".join(tab)
+                result += "| %i\n"%(1+group+o)
+        result += "=".join(["="*w for w in self.width])+"==\n"
+        return result
     
 def processContext(context):
     fills = []
@@ -236,6 +162,7 @@ def parseClues(preamble,scope):
     return clues
 
 def main(**kwargs):
+    from solver import unrender
 
     print("Welcome from Python")
 
@@ -258,21 +185,9 @@ def main(**kwargs):
 
     preamble = generatePreamble(context,kinds,numbers)
     clues = parseClues(preamble,unparsedClues)
-    solver = CClueMatrix(tree,[*zip(kinds,fills)],clues)
-    tryAgain = True
-    goodMeasure = False #True
-    while tryAgain:
-        solver.assertDistinctWithinGroup()
-        newKnowns = solver.assertQuotaWithinGroup()
-        changed = solver.matchAndMate()
-        if newKnowns < 1 and not changed:
-            tryAgain = goodMeasure
-            goodMeasure = False
-        else:
-            #goodMeasure = True
-            pass
-        
-    print(solver)
+    renderer = CClueMatrix(tree,[*zip(kinds,fills)],clues)
+    results = unrender(renderer.export())
+    print(results)
 
 
 if __name__ == "__main__":
